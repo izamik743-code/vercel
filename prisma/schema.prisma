@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  telegramId    BigInt   @unique @map("telegram_id")
+  username      String?
+  firstName     String   @map("first_name")
+  lastName      String?  @map("last_name")
+  balance       Float    @default(0)
+  walletAddress String?  @map("wallet_address")
+  initData      String?  @map("init_data")
+  referralCode  String?  @unique @map("referral_code")
+  referredBy    Int?     @map("referred_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  lastActive    DateTime @default(now()) @map("last_active")
+
+  // Relations
+  transactions Transaction[]
+  inventory    InventoryItem[]
+  referrals    User[] @relation("UserReferrals", fields: [referredBy], references: [id])
+
+  @@map("users")
+}
+
+model Transaction {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  type          String   // 'deposit', 'withdrawal', 'case_open', 'referral_bonus', 'admin_withdrawal'
+  amount        Float
+  currency      String   @default("TON")
+  status        String   @default("completed")
+  description   String?
+  walletAddress String?  @map("wallet_address")
+  adminAction   Boolean  @default(false) @map("admin_action")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model InventoryItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  itemName  String   @map("item_name")
+  itemRarity String  @map("item_rarity") // 'common', 'rare', 'epic', 'legendary'
+  itemValue Int      @map("item_value")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("inventory")
+}
